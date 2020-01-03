@@ -9,7 +9,8 @@ import {
   RecordList, 
   BetModal,
   BettedList,
-  Manager
+  Manager,
+  ErrorMessage
 } from 'src/components'
 import { Store, StoreProvider } from 'src/store'
 import { getCurrentGame, getGameRecords } from 'src/api'
@@ -23,9 +24,8 @@ interface GameScoreAppProps extends AppProps {
 
 const GameScoreApp: React.FC<GameScoreAppProps> = props => {
   if (props.error) {
-    console.log(props.error)
     return (
-      <p>{props.error.message}</p>
+      <ErrorMessage error={props.error}/>
     )
   }
 

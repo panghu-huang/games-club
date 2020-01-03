@@ -39,7 +39,7 @@ const BetFormModal: React.FC<BetFormModalProps> = props => {
       try {
         const amount = +(value || 0)
         if (amount > balance || amount <= 0) {
-          return message.error('金额不对')
+          throw new Error('金额不对')
         }
         setBetting(true)
         await ScatterService.transfer(

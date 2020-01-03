@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { EventEmitter, Listener } from 'events'
+import { formatError } from 'src/utils'
 import { networkConfig } from 'src/config'
 import ScatterJS from 'scatterjs-core'
 import ScatterEOS from 'scatterjs-plugin-eosjs'
@@ -15,30 +16,37 @@ export class ScatterService {
 
   public static async login() {
     try {
-      const scatter = ScatterJS.scatter
-      const connected = await scatter.connect('GameScore')
-      if (!connected) {
-        throw new Error()
+      if (!this.identity) {
+        const scatter = window.scatter || ScatterJS.scatter
+        const connected = scatter.connect
+          ? await scatter.connect('GameScore')
+          : true
+        if (!connected) {
+          throw new Error('请安装并打开 Scatter')
+        }
+        const requiredFields = {
+          accounts: [networkConfig]
+        }
+        this.identity = scatter.login
+          ? await scatter.login() 
+          : await scatter.getIdentity(requiredFields)
+        this.scatter = scatter
+        this.eos = scatter.eos(networkConfig, EOS$JS, {
+          expireInSeconds: 20,
+        })
+  
+        // remove reference
+        window.ScatterJS = null
+        window.ScatterEOS = null
+        window.scatter = null
+  
+        emitter.emit('login', this.identity)
       }
-      const requiredFields = {
-        accounts: [networkConfig]
-      }
-      this.identity = await scatter.getIdentity(requiredFields)
-      this.scatter = scatter
-      this.eos = scatter.eos(networkConfig, EOS$JS, {
-        expireInSeconds: 20,
-      })
-
-      // remove reference
-      window.ScatterJS = null
-      window.ScatterEOS = null
-      window.scatter = null
-
-      emitter.emit('login', this.identity)
 
       return this.identity
     } catch (error) {
-      throw new Error('请安装并打开 Scatter')
+      const message = formatError(error)
+      throw new Error(message)
     }
   }
 
@@ -59,7 +67,8 @@ export class ScatterService {
     keyType?: string
   ) {
     if (!this.eos) {
-      this.eos = ScatterJS.scatter.eos(networkConfig, EOS$JS, {
+      const scatter = window.scatter || ScatterJS.scatter
+      this.eos = scatter.eos(networkConfig, EOS$JS, {
         expireInSeconds: 20,
       })
     }
@@ -78,14 +87,19 @@ export class ScatterService {
     account,
     symbol: string
   ) {
-    if (!this.eos) {
-      this.eos = ScatterJS.scatter.eos(networkConfig, EOS$JS, {
-        expireInSeconds: 20,
+    try {
+      if (!this.eos) {
+        const scatter = window.scatter || ScatterJS.scatter
+        this.eos = scatter.eos(networkConfig, EOS$JS, {
+          expireInSeconds: 20,
+        })
+      }
+      return this.eos.getCurrencyBalance({ 
+        code, account, symbol, 
       })
+    } catch (error) {
+      throw new Error(formatError(error))
     }
-    return this.eos.getCurrencyBalance({ 
-      code, account, symbol, 
-    })
   }
 
   public static async getEOSBalance(account: stirng) {
@@ -98,10 +112,11 @@ export class ScatterService {
     if (!this.identity) {
       return this.throwUnloginError()
     }
-    const account: IIdentity = this.identity.accounts
-      .find((identity: IIdentity) => identity.blockchain === blockchain);
+    const account = this.identity.accounts
+      .find(identity => identity.blockchain === blockchain)
+
     if (account) {
-      return account.name;
+      return account.name
     }
   }
 
@@ -116,24 +131,28 @@ export class ScatterService {
   }
 
   public static async transaction(account: string, name: string, data: object) {
-    const eos = this.eos
-    const accountName = this.getAccountName()
-    if (!eos || !accountName) {
-      this.throwUnloginError()
+    try {
+      const eos = this.eos
+      const accountName = this.getAccountName()
+      if (!eos || !accountName) {
+        this.throwUnloginError()
+      }
+      await eos.transaction({
+        actions: [
+          {
+            account,
+            name,
+            authorization: [{
+              actor: accountName,
+              permission: 'active',
+            }],
+            data,
+          }
+        ]
+      })
+    } catch (error) {
+      throw new Error(formatError(error))
     }
-    await eos.transaction({
-      actions: [
-        {
-          account,
-          name,
-          authorization: [{
-            actor: accountName,
-            permission: 'active',
-          }],
-          data,
-        }
-      ]
-    })
   }
 
   public static on(evt: EventName, listener: Listener) {
