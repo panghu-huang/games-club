@@ -16,7 +16,6 @@ const PageHeader: React.FC = () => {
           ScatterService.logout()
         }
       } catch (error) {
-        console.log('eee')
         message.error(error.message)
       }
     },

@@ -13,7 +13,6 @@ const AppContainer: React.FC = props => {
       try {
         await ScatterService.login()
       } catch (error) {
-        console.log('catched error')
         message.error(error.message)
       }
     },
@@ -22,7 +21,13 @@ const AppContainer: React.FC = props => {
 
   React.useEffect(
     () => {
-      login()
+      const raceTimer = setTimeout(login, 2000)
+      
+      document.addEventListener('scatterLoaded', () => {
+        clearTimeout(raceTimer)
+        login()
+      })
+      
       ScatterService.on('login', (identity: any) => {
         if (identity?.accounts.length) {
           const account = identity.accounts[0]

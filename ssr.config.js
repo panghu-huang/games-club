@@ -3,6 +3,7 @@ const AntdDayjsWebpackPlugin = require('antd-dayjs-webpack-plugin')
 
 module.exports = {
   cleanConsoleOnRebuild: true,
+  publicPath: '/public/',
   serverEntry: path.resolve(__dirname, './src/server.ts'),
   configureWebpack: (isServer, config) => {
     config.resolve.alias = {

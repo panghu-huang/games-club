@@ -1,14 +1,18 @@
-// @ts-nocheck
-import { EventEmitter, Listener } from 'events'
+import { EventEmitter } from 'events'
 import { formatError } from 'src/utils'
 import { networkConfig } from 'src/config'
-import ScatterJS from 'scatterjs-core'
-import ScatterEOS from 'scatterjs-plugin-eosjs'
+// @ts-ignore
 import EOS$JS from 'eosjs'
 
 export type EventName = 'login' | 'logout'
 
-ScatterJS.plugins(new ScatterEOS())
+type Listener = (...args: any[]) => void
+
+declare global {
+  interface Window {
+    scatter: any
+  }
+}
 
 const emitter = new EventEmitter()
 
@@ -17,7 +21,7 @@ export class ScatterService {
   public static async login() {
     try {
       if (!this.identity) {
-        const scatter = window.scatter || ScatterJS.scatter
+        const scatter = await this.getScatter()
         const connected = scatter.connect
           ? await scatter.connect('GameScore')
           : true
@@ -28,13 +32,8 @@ export class ScatterService {
           accounts: [networkConfig]
         }
         this.identity = scatter.login
-          ? await scatter.login() 
+          ? await scatter.login(requiredFields) 
           : await scatter.getIdentity(requiredFields)
-          
-        this.scatter = scatter
-        this.eos = scatter.eos(networkConfig, EOS$JS, {
-          expireInSeconds: 20,
-        })
   
         emitter.emit('login', this.identity)
       }
@@ -51,7 +50,7 @@ export class ScatterService {
       await this.scatter.forgetIdentity()
       emitter.emit('logout')
     }
-    this.scatter = null
+
     this.identity = null
   }
 
@@ -62,13 +61,8 @@ export class ScatterService {
     lowerBound?: string,
     keyType?: string
   ) {
-    if (!this.eos) {
-      const scatter = window.scatter || ScatterJS.scatter
-      this.eos = scatter.eos(networkConfig, EOS$JS, {
-        expireInSeconds: 20,
-      })
-    }
-    return await this.eos.getTableRows({
+    const eos = await this.getEOS()
+    return await eos.getTableRows({
       scope,
       code,
       table,
@@ -80,17 +74,12 @@ export class ScatterService {
 
   public static async getCurrencyBalance(
     code: string,
-    account,
+    account: string,
     symbol: string
   ) {
     try {
-      if (!this.eos) {
-        const scatter = window.scatter || ScatterJS.scatter
-        this.eos = scatter.eos(networkConfig, EOS$JS, {
-          expireInSeconds: 20,
-        })
-      }
-      return this.eos.getCurrencyBalance({ 
+      const eos = await this.getEOS()
+      return await eos.getCurrencyBalance({ 
         code, account, symbol, 
       })
     } catch (error) {
@@ -98,7 +87,7 @@ export class ScatterService {
     }
   }
 
-  public static async getEOSBalance(account: stirng) {
+  public static async getEOSBalance(account: string) {
     return this.getCurrencyBalance(
       'eosio.token', account, 'EOS'
     )
@@ -109,7 +98,7 @@ export class ScatterService {
       return this.throwUnloginError()
     }
     const account = this.identity.accounts
-      .find(identity => identity.blockchain === blockchain)
+      .find((identity: any) => identity.blockchain === blockchain)
 
     if (account) {
       return account.name
@@ -128,7 +117,7 @@ export class ScatterService {
 
   public static async transaction(account: string, name: string, data: object) {
     try {
-      const eos = this.eos
+      const eos = await this.getEOS()
       const accountName = this.getAccountName()
       if (!eos || !accountName) {
         this.throwUnloginError()
@@ -169,5 +158,33 @@ export class ScatterService {
 
   private static throwUnloginError() {
     throw new Error('未安装 Scatter 或者登录失败')
+  }
+
+  private static async getScatter(): Promise<any> {
+    if (!this.scatter) {
+      if (window.scatter) {
+        this.scatter = window.scatter
+      } else {
+        const ScatterJS = (await import(/* webpackChunkName: "scatterjs" */'scatterjs-core' as any)).default
+        const ScatterEOS = (await import(/* webpackChunkName: "scatterjs-eos" */'scatterjs-plugin-eosjs' as any)).default
+        
+        ScatterJS.plugins(new ScatterEOS())
+  
+        this.scatter = ScatterJS.scatter
+      }
+    }
+    
+    return this.scatter
+  }
+
+  private static async getEOS(): Promise<any> {
+    if (!this.eos) {
+      const scatter = await this.getScatter()
+      this.eos = scatter.eos(networkConfig, EOS$JS, {
+        expireInSeconds: 20,
+      })
+    }
+
+    return this.eos
   }
 }
