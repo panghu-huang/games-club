@@ -16,9 +16,7 @@ const staticMiddleware = express.static(
       if (process.env.NODE_ENV === 'development') {
         return
       }
-      console.log(fullPath)
       const extname = path.extname(fullPath)
-      console.log(extname)
       if (extname === '.js' || extname === '.css') {
         // 一个月，有 hash 默认不变
         const maxAge = 60 * 60 * 24 * 30

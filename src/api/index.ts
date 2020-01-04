@@ -76,7 +76,7 @@ export async function getBettedList(account: string) {
     'name'
   )
 
-  return rows
+  return rows.filter(row => row.name === account)
 }
 
 export async function claimReward(gameId: number, account: string) {

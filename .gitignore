@@ -3,3 +3,7 @@ node_modules
 yarn-error.log
 .idea
 .vscode
+.DS_Store
+
+.env.development.local
+.env.production.local

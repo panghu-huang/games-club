@@ -30,15 +30,11 @@ export class ScatterService {
         this.identity = scatter.login
           ? await scatter.login() 
           : await scatter.getIdentity(requiredFields)
+          
         this.scatter = scatter
         this.eos = scatter.eos(networkConfig, EOS$JS, {
           expireInSeconds: 20,
         })
-  
-        // remove reference
-        window.ScatterJS = null
-        window.ScatterEOS = null
-        window.scatter = null
   
         emitter.emit('login', this.identity)
       }

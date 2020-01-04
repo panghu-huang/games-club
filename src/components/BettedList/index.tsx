@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { message } from 'antd'
 import { getBettedList, claimReward } from 'src/api'
 import { useStore } from 'src/store'
 import { UserBetted } from 'src/types'
@@ -27,10 +28,13 @@ const BettedList: React.FC = () => {
   const claim = React.useCallback(
     async () => {
       try {
+        setLoading(true)
         await claimReward(currentGame.id, account as string)
         await fetchBettedList(account as string)
       } catch (error) {
-        console.log(error)
+        message.error(error.message)
+      } finally {
+        setLoading(false)
       }
     },
     [account, currentGame.id]
