@@ -1,12 +1,15 @@
 import * as React from 'react'
 import * as types from 'src/types'
-import { Table } from 'antd'
+import { Table, Button } from 'antd'
 import { formatTime } from 'src/utils'
 import classes from './RecordList.scss'
 
 interface RecordListProps {
+  loading: boolean
+  hasMore: boolean
   gameId: number
   records: types.Record[]
+  onLoadMore: () => void
 }
 
 const RecordList: React.FC<RecordListProps> = props => {
@@ -39,6 +42,24 @@ const RecordList: React.FC<RecordListProps> = props => {
     ]),
     []
   )
+
+  const footer = React.useCallback(
+    () => {
+      if (!props.hasMore) {
+        return null
+      }
+      return (
+        <div style={{ textAlign: 'center' }}>
+          <Button 
+            loading={props.loading}
+            onClick={props.onLoadMore}>
+            加载更多
+          </Button>
+        </div>
+      )
+    },
+    [props.onLoadMore, props.loading, props.hasMore]
+  )
   
   return (
     <Table
@@ -47,6 +68,7 @@ const RecordList: React.FC<RecordListProps> = props => {
       className={classes.list}
       dataSource={props.records}
       columns={columns}
+      footer={footer}
     />
   )
 }
@@ -54,4 +76,5 @@ const RecordList: React.FC<RecordListProps> = props => {
 export default React.memo(RecordList, (prevProps, nextProps) => {
   return prevProps.records.length === nextProps.records.length
     && prevProps.gameId === nextProps.gameId
+    && prevProps.loading === nextProps.loading
 })

@@ -19,6 +19,7 @@ import './global.scss'
 interface GameScoreAppProps extends AppProps {
   currentGame: types.Game
   records: types.Record[]
+  hasMoreRecords: boolean
   error?: any
 }
 
@@ -43,7 +44,10 @@ const GameScoreApp: React.FC<GameScoreAppProps> = props => {
         <GameProgress/>
         <GameTeams/>
         <BettedList/>
-        <RecordList records={props.records}/>
+        <RecordList 
+          hasMore={props.hasMoreRecords}
+          records={props.records}
+        />
         <BetModal/>
         <Manager/>
       </AppContainer>
@@ -60,7 +64,8 @@ GameScoreApp.getInitialProps = async (): Promise<Partial<GameScoreAppProps>> => 
     console.log(((Date.now() - start) / 1000).toFixed(2))
     return {
       currentGame,
-      records,
+      records: records.rows,
+      hasMoreRecords: records.more,
     }
   } catch (error) {
     return {

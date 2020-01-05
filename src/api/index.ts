@@ -16,7 +16,7 @@ async function getTableRows<T = any>(
   table: string,
   lowerBound?: string,
   keyType?: string
-): Promise<{ rows: T[], has_more: boolean }> {
+): Promise<{ rows: T[], more: boolean }> {
   const url = getUrl('/get_table_rows')
   if (!isServer) {
     return await ScatterService.getTableRows(
@@ -57,14 +57,12 @@ export async function getCurrentGame() {
 }
 
 export async function getGameRecords(game: number, lastRecordId?: number) {
-  const { rows } = await getTableRows<types.Record>(
+  return await getTableRows<types.Record>(
     game + '',
     contract,
     'record',
     lastRecordId ? String(lastRecordId + 1) : undefined,
   )
-
-  return rows
 }
 
 export async function getBettedList(account: string) {
