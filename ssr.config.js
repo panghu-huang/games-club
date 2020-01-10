@@ -5,7 +5,7 @@ module.exports = {
   cleanConsoleOnRebuild: true,
   publicPath: '/public/',
   serverEntry: path.resolve(__dirname, './src/server.ts'),
-  configureWebpack: (isServer, config) => {
+  configureWebpack: (config, isServer) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@ant-design/icons/lib/dist$': path.resolve(__dirname, './src/icons.ts'),
