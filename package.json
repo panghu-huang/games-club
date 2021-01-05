@@ -16,7 +16,7 @@
     "@ant-design/icons": "^2.1.1",
     "@wokeyi/store": "^2.0.4",
     "antd": "^3.26.5",
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "eosjs": "16.0.8",
     "express": "^4.17.1",
     "react": "^16.12.0",
